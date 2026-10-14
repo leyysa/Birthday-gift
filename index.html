@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Secret for You 💗</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fbc2eb);
+      font-family: Georgia, serif;
+    }
+
+    .glass {
+      background: rgba(255,255,255,.91);
+      box-shadow: 0 20px 60px #b8326230;
+      backdrop-filter: blur(12px);
+    }
+
+    .pin-dot {
+      width: 13px;
+      height: 13px;
+      border: 2px solid #f08bb2;
+      border-radius: 50%;
+      transition: .2s;
+    }
+
+    .pin-dot.filled {
+      background: #ec6d9d;
+      transform: scale(1.1);
+    }
+
+    .key {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: #fff0f5;
+      color: #bd4778;
+      font-size: 1.35rem;
+      font-weight: bold;
+      transition: .15s;
+    }
+
+    .key:active {
+      transform: scale(.9);
+      background: #ffd4e4;
+    }
+
+    .heart {
+      position: fixed;
+      bottom: -30px;
+      pointer-events: none;
+      animation: floatUp linear forwards;
+    }
+
+    @keyframes floatUp {
+      from { transform: translateY(0); opacity: 0; }
+      15% { opacity: .8; }
+      to { transform: translateY(-110vh) rotate(30deg); opacity: 0; }
+    }
+
+    .shake { animation: shake .3s; }
+
+    @keyframes shake {
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center px-4 py-8">
+
+  <!-- SECRET PIN SCREEN -->
+  <main id="lockScreen"
+    class="glass relative z-10 w-full max-w-sm rounded-3xl p-7 text-center">
+
+    <div class="text-5xl mb-4">🎀</div>
+
+    <h1 class="text-3xl font-bold text-pink-500 mb-3">
+      A little secret ♡
+    </h1>
+
+    <p class="text-gray-500 mb-6">
+      Enter your special 4-digit code to unlock your surprise 💌
+    </p>
+
+    <!-- PIN DOTS -->
+    <div id="pinDots" class="flex justify-center gap-4 mb-5">
+      <span class="pin-dot"></span>
+      <span class="pin-dot"></span>
+      <span class="pin-dot"></span>
+      <span class="pin-dot"></span>
+    </div>
+
+    <p id="message" class="text-sm text-pink-500 mb-4 h-5"
+       aria-live="polite">
+      only you know the code ♡
+    </p>
+
+    <!-- NUMERIC KEYPAD -->
+    <div class="grid grid-cols-3 justify-items-center gap-3">
+      <button class="key" onclick="pressPin('1')">1</button>
+      <button class="key" onclick="pressPin('2')">2</button>
+      <button class="key" onclick="pressPin('3')">3</button>
+
+      <button class="key" onclick="pressPin('4')">4</button>
+      <button class="key" onclick="pressPin('5')">5</button>
+      <button class="key" onclick="pressPin('6')">6</button>
+
+      <button class="key" onclick="pressPin('7')">7</button>
+      <button class="key" onclick="pressPin('8')">8</button>
+      <button class="key" onclick="pressPin('9')">9</button>
+
+      <button class="key text-sm" onclick="clearPin()">CLEAR</button>
+      <button class="key" onclick="pressPin('0')">0</button>
+      <button class="key" onclick="deletePin()">⌫</button>
+    </div>
+
+    <p class="text-xs text-pink-300 mt-6">
+      made with love, just for you ✧
+    </p>
+  </main>
+
+  <!-- BIRTHDAY SURPRISE -->
+  <main id="birthdayScreen"
+    class="hidden glass relative z-10 w-full max-w-md rounded-3xl p-7 text-center">
+
+    <div class="text-5xl mb-4">🎂</div>
+
+    <h1 class="text-3xl sm:text-4xl font-bold text-pink-500 mb-4">
+      Happy Birthday,<br>My Love 💗
+    </h1>
+
+    <p class="text-gray-600 leading-relaxed mb-6">
+      Happy birthday to my favorite person in the world.
+      I wish I could be beside you today, holding your hand
+      and giving you the biggest hug ever. ♡
+    </p>
+
+    <div class="text-4xl mb-5">🌷 💌 🎀</div>
+
+    <button onclick="openLetter()"
+      class="w-full rounded-xl bg-pink-500 text-white p-3 font-bold">
+      Open your love letter 💌
+    </button>
+
+    <div id="letter" class="hidden bg-pink-50 rounded-2xl p-5 mt-5">
+      <h2 class="text-xl font-bold text-pink-600 mb-3">
+        A message just for you ♡
+      </h2>
+
+      <p class="text-gray-700 leading-relaxed">
+        My love, I hope this new chapter brings you happiness,
+        peaceful days, beautiful memories, and dreams that come true.
+        <br><br>
+        Even when we're far apart, you have a special place in my heart.
+        You deserve to feel loved every single day.
+        <br><br>
+        Happy birthday, sweetheart. Sending you a million kisses
+        until I can give you a real one. 💋
+      </p>
+
+      <p class="text-pink-500 italic mt-4">Forever yours, ♡</p>
+    </div>
+
+    <button onclick="celebrate()"
+      class="mt-4 rounded-xl bg-pink-100 text-pink-600 p-3 font-bold w-full">
+      More confetti! ✨
+    </button>
+  </main>
+
+  <script>
+    // CHANGE THIS TO YOUR SECRET 4-DIGIT PIN
+    const SECRET_PIN = "1001";
+
+    let enteredPin = "";
+
+    function updateDots() {
+      document.querySelectorAll(".pin-dot").forEach((dot, i) => {
+        dot.classList.toggle("filled", i < enteredPin.length);
+      });
+    }
+
+    function pressPin(number) {
+      if (enteredPin.length >= 4) return;
+
+      enteredPin += number;
+      updateDots();
+
+      if (enteredPin.length === 4) {
+        setTimeout(checkPin, 180);
+      }
+    }
+
+    function deletePin() {
+      enteredPin = enteredPin.slice(0, -1);
+      updateDots();
+      document.getElementById("message").textContent =
+        "only you know the code ♡";
+    }
+
+    function clearPin() {
+      enteredPin = "";
+      updateDots();
+      document.getElementById("message").textContent =
+        "only you know the code ♡";
+    }
+
+    function checkPin() {
+      if (enteredPin === SECRET_PIN) {
+        document.getElementById("lockScreen").classList.add("hidden");
+        document.getElementById("birthdayScreen").classList.remove("hidden");
+        celebrate();
+      } else {
+        const screen = document.getElementById("lockScreen");
+        screen.classList.remove("shake");
+        void screen.offsetWidth;
+        screen.classList.add("shake");
+
+        document.getElementById("message").textContent =
+          "wrong code, sweetheart 🥺 try again!";
+        enteredPin = "";
+        updateDots();
+      }
+    }
+
+    function celebrate() {
+      confetti({
+        particleCount: 160,
+        spread: 100,
+        origin: { y: 0.6 },
+        colors: ["#ff69b4", "#ffc0cb", "#e6b3ff", "#ffffff"]
+      });
+
+      setTimeout(() => {
+        confetti({
+          particleCount: 100,
+          spread: 120,
+          origin: { x: 0.1 },
+          colors: ["#ff69b4", "#ffc0cb", "#e6b3ff"]
+        });
+
+        confetti({
+          particleCount: 100,
+          spread: 120,
+          origin: { x: 0.9 },
+          colors: ["#ff69b4", "#ffc0cb", "#e6b3ff"]
+        });
+      }, 300);
+    }
+
+    function openLetter() {
+      document.getElementById("letter").classList.toggle("hidden");
+      celebrate();
+    }
+
+    function createHeart() {
+      const heart = document.createElement("span");
+      heart.className = "heart";
+      heart.textContent = ["💗", "♡", "💕", "💖"][
+        Math.floor(Math.random() * 4)
+      ];
+      heart.style.left = Math.random() * 100 + "vw";
+      heart.style.fontSize = (16 + Math.random() * 20) + "px";
+      heart.style.animationDuration = (6 + Math.random() * 5) + "s";
+
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 11000);
+    }
+
+    setInterval(createHeart, 650);
+  </script>
+</body>
+</html>
